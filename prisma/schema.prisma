@@ -1,0 +1,87 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Shop model to store Shopify store information
+model Shop {
+  id            String          @id @default(uuid())
+  shopifyDomain String          @unique
+  shopifyToken  String?
+  isActive      Boolean         @default(true)
+  plan          Plan            @default(FREE)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  settings      ShopSettings?
+  credits       Credits?
+  history       GenerationHistory[]
+}
+
+// Shop settings model
+model ShopSettings {
+  id                 String   @id @default(uuid())
+  shopId             String   @unique
+  shop               Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  defaultTone        String   @default("professional")
+  includeMeta        Boolean  @default(true)
+  autoSave           Boolean  @default(false)
+  productTitleTemplate String?
+  productDescTemplate String?
+  metaTitleTemplate  String?
+  metaDescTemplate   String?
+  visualAnalysisDepth String  @default("standard")
+  autoDetectType     Boolean  @default(true)
+  enhancedMaterials  Boolean  @default(true)
+  colorAnalysis      Boolean  @default(true)
+  emailUpdates       Boolean  @default(true)
+  creditAlerts       Boolean  @default(true)
+  productUpdates     Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+// Credits model to track usage
+model Credits {
+  id            String   @id @default(uuid())
+  shopId        String   @unique
+  shop          Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  available     Int      @default(0)
+  total         Int      @default(0)
+  resetDate     DateTime
+  lastPurchased DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Generation history model
+model GenerationHistory {
+  id            String   @id @default(uuid())
+  shopId        String
+  shop          Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  productId     String
+  productTitle  String
+  originalDesc  String?  @db.Text
+  generatedDesc String?  @db.Text
+  generatedMeta String?  @db.Text
+  imageAnalysis Json?
+  status        String   @default("pending")
+  error         String?
+  creditsUsed   Int      @default(0)
+  createdAt     DateTime @default(now())
+  completedAt   DateTime?
+}
+
+// Subscription plan enum
+enum Plan {
+  FREE
+  BASIC
+  STANDARD
+  PRO
+}
